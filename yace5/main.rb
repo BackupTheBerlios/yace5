@@ -97,9 +97,9 @@ while sess = sock.accept do
 	end
 
 	if t["type"] == 6 then
-	  @clients.each { |t|
+	  @clients.each { |thread|
 	    begin
-	      t.current["mysess"].send("\3#{ti["args"][0]}\0#{t["args"][1]}",0) if t.alive?
+	      thread["sess"].send("\3#{t["args"][0]}\0#{t["args"][1]}",0)	      
 	    rescue
 	    end
 	  }

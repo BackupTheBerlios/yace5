@@ -24,6 +24,7 @@ require 'functions.rb'
 sockloc = "/tmp/yace.sock"
 myport = 7001
 @sessions = Array.new
+@rt = Array.new
 
 puts "+ Starting Up YaCE5 Web-Interface..."
 puts "+ Trying to access socket at #{sockloc}.."
@@ -45,12 +46,21 @@ end
 
 u = Thread.new {
   while d = @cl.recvfrom(1024)[0] do
-    p d
-    if d[0] = "3" then
-      user, text = d[1..-1].split("\0")
-      p user
-      p text
+    if d[0] == 3 then
+       user, text = d[1..-1].split("\0")
+       @sessions.each { |sessio|
+         begin
+           sessio["inputqueue"].push("(#{user}) #{text}<br />") if sessio.alive?
+	 rescue
+	 end
+       }
     end
+
+    if d[0] == 1 then
+      #p @rt.shift
+      @rt.shift["prop"] = d[1..-1]
+    end
+    
   end
 }
 
@@ -62,6 +72,7 @@ while sess = s.accept do
 	if what[0..5] == "/LOGIN" then
 	  
 	  Thread.current["inputqueue"] = Array.new
+	  Thread.current["prop"] = String.new
 	  
 	  v = urlextract(what)
           mysess.puts("HTTP/1.1 200 OK")
@@ -69,7 +80,7 @@ while sess = s.accept do
 	  mysess.puts("Cache-control: no-cache")
 	  mysess.puts("Content-type: text/html")
 	  mysess.puts("\r\n")
-	  mysess.puts("Willkommen im YaCE5!")
+	  mysess.puts("Willkommen im YaCE5!<br />")
 	  
           @cl.send("\2#{v["name"]}",0)
 	  sleep(0.1)
@@ -77,26 +88,31 @@ while sess = s.accept do
 	  @cl.send("\3" + v["name"] + "\0id\0#{v["id"]}",0)
 	  
 	  loop {
-	    if Thread.current["inputqueue"] then
+	    if Thread.current["inputqueue"].length > 0 then
 	      mysess.puts(Thread.current["inputqueue"].shift)
 	    end
 	  }
 	end
 	if what[0..5] == "/INPUT" then
 	  v = urlextract(what)
-	  
+          
+	  @rt.push(Thread.current)
 	  @cl.send("\4#{v["name"]}\0id",0)
+	  
 	  sleep(0.1)
-	  id = @cl.recvfrom(1024)[0]
+	  id = Thread.current["prop"]
+
 	  if id[0] == 1 then; id = id[1..-1]; end
 	  
 	  if v["id"] = id then
-	    puts "#{v["name"]} sagte #{v["input"]}"
+	    v["input"].gsub!('+', ' ')
+	    @cl.send("\6#{v["name"]}\0#{v["input"]}",0)
 	  end
 	  
 	end
       end
     end
+    @sessions.delete(Thread.current)
   }
 end
 

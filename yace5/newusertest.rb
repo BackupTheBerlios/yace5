@@ -23,24 +23,16 @@ require 'functions.rb'
 
 sockloc = "/tmp/yace.sock"
 cl = UNIXSocket.open(sockloc)
-cl.send("\1YaCE5 New User Test",0)
-sleep(1)
-cl.send("\2Hallo",0)
-sleep(1)
-cl.send("\3" + "Hallo" + "\0" + "room" + "\0" + "lounge",0)
-sleep(0.1)
-cl.send("\3" + "Hallo" + "\0" + "color" + "\0" + "#da1337",0)
-sleep(1)
-cl.send("\5",0)
-puts "Entering Neverending Loop"
+cl.send("\1Foo",0);
 loop {
   data = cl.recvfrom(1024)[0]
-  if data[0] == 2 then
-    d = data[1..-1].split("\0")
-    puts "+ Caught User!"
-    puts "+ Nick: #{d.shift}"
-    @props = Hash.new
-    while !d.empty? do; @props[d.shift] = d.shift; end
-  end
+#  if data[0] == 2 then
+#    d = data[1..-1].split("\0")
+#    puts "+ Caught User!"
+#    puts "+ Nick: #{d.shift}"
+#    @props = Hash.new
+#    while !d.empty? do; @props[d.shift] = d.shift; end
+#  end
+  puts data
 }
 cl.close
