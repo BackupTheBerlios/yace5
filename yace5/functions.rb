@@ -55,6 +55,12 @@ def parse_data(data)
      return ret
    end
    
+   if prefix == "6" then
+     ret["type"] = 6
+     ret["args"] = data[1..-1].split("\0")
+     return ret
+   end
+   
 end
 
 def urlextract(url)

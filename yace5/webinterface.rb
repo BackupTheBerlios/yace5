@@ -28,7 +28,7 @@ myport = 7001
 puts "+ Starting Up YaCE5 Web-Interface..."
 puts "+ Trying to access socket at #{sockloc}.."
 begin
-  cl = UNIXSocket.open(sockloc)
+  @cl = UNIXSocket.open(sockloc)
 rescue
   puts "- Cannot open socket.. path correct? YaCE5-Core running?"
   exit
@@ -41,26 +41,59 @@ rescue
   puts "- Cannot open TCP Socket on port #{myport}!"
 end
 
-cl.send("\1YaCE5 Web-Interface",0)
+@cl.send("\1YaCE5 Web-Interface",0)
+
+u = Thread.new {
+  while d = @cl.recvfrom(1024)[0] do
+    p d
+    if d[0] = "3" then
+      user, text = d[1..-1].split("\0")
+      p user
+      p text
+    end
+  end
+}
 
 while sess = s.accept do
   @sessions << Thread.new(sess) { |mysess|
     while data = mysess.gets
       if data[0..2] == "GET" then # We got a GET-Request
         what = data.split(" ")[1]
-	if what[0..5] = "/LOGIN" then
+	if what[0..5] == "/LOGIN" then
+	  
+	  Thread.current["inputqueue"] = Array.new
+	  
 	  v = urlextract(what)
           mysess.puts("HTTP/1.1 200 OK")
   	  mysess.puts("Server: YaCE 5")
 	  mysess.puts("Cache-control: no-cache")
 	  mysess.puts("Content-type: text/html")
 	  mysess.puts("\r\n")
-          cl.send("\2#{v["name"]}",0)
+	  mysess.puts("Willkommen im YaCE5!")
+	  
+          @cl.send("\2#{v["name"]}",0)
 	  sleep(0.1)
-	  cl.send("\3" + v["name"] + "\0id\0#{v["id"]}",0)
-	  loop { }
+	  
+	  @cl.send("\3" + v["name"] + "\0id\0#{v["id"]}",0)
+	  
+	  loop {
+	    if Thread.current["inputqueue"] then
+	      mysess.puts(Thread.current["inputqueue"].shift)
+	    end
+	  }
 	end
-	if what = "/INPUT"
+	if what[0..5] == "/INPUT" then
+	  v = urlextract(what)
+	  
+	  @cl.send("\4#{v["name"]}\0id",0)
+	  sleep(0.1)
+	  id = @cl.recvfrom(1024)[0]
+	  if id[0] == 1 then; id = id[1..-1]; end
+	  
+	  if v["id"] = id then
+	    puts "#{v["name"]} sagte #{v["input"]}"
+	  end
+	  
 	end
       end
     end

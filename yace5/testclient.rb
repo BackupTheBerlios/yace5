@@ -22,5 +22,7 @@ require 'socket'
 
 sockloc = "/tmp/yace.sock"
 cl = UNIXSocket.open(sockloc)
-cl.send("\3Fuckyou\0fu\0fu",0)
+cl.send("\1Test",0)
+sleep(0.1)
+cl.send("\6unknown\0foo",0)
 cl.close
