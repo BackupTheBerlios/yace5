@@ -19,9 +19,11 @@
 
 
 require 'socket'
+require 'functions.rb'
 
 sockloc = "/tmp/yace.sock"
 myport = 7001
+@sessions = Array.new
 
 puts "+ Starting Up YaCE5 Web-Interface..."
 puts "+ Trying to access socket at #{sockloc}.."
@@ -40,5 +42,29 @@ rescue
 end
 
 cl.send("\1YaCE5 Web-Interface",0)
+
+while sess = s.accept do
+  @sessions << Thread.new(sess) { |mysess|
+    while data = mysess.gets
+      if data[0..2] == "GET" then # We got a GET-Request
+        what = data.split(" ")[1]
+	if what[0..5] = "/LOGIN" then
+	  v = urlextract(what)
+          mysess.puts("HTTP/1.1 200 OK")
+  	  mysess.puts("Server: YaCE 5")
+	  mysess.puts("Cache-control: no-cache")
+	  mysess.puts("Content-type: text/html")
+	  mysess.puts("\r\n")
+          cl.send("\2#{v["name"]}",0)
+	  sleep(0.1)
+	  cl.send("\3" + v["name"] + "\0id\0#{v["id"]}",0)
+	  loop { }
+	end
+	if what = "/INPUT"
+	end
+      end
+    end
+  }
+end
 
 cl.close

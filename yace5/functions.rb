@@ -55,4 +55,15 @@ def parse_data(data)
      return ret
    end
    
-end							    
+end
+
+def urlextract(url)
+  ret = Hash.new
+  
+  ficki = url.split("?")[1].split("&")
+  ficki.each { |k|
+    ret[k.split("=")[0]] = k.split("=")[1]
+  }
+
+  return ret
+end
