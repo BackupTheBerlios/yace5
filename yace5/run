@@ -1,0 +1,6 @@
+#!/bin/sh
+
+# ~ For great testing
+
+rm /tmp/yace.sock
+ruby main.rb
